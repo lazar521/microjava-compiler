@@ -1,0 +1,19 @@
+program TestTernary
+
+{
+	void main()
+		int x;
+	{
+		x = true ? 5 : 10;
+		print(x); print(' ');   // 5
+
+		x = false ? 5 : 10;
+		print(x); print(' ');   // 10
+
+		x = (5 > 3) ? (2 + 3) : (7 + 1);
+		print(x); print(' ');   // 5
+
+		x = true ? (false ? 1 : 2) : 3;
+		print(x); print(eol);   // 2
+	}
+}

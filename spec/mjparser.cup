@@ -1,0 +1,244 @@
+import java_cup.runtime.*;
+import org.apache.log4j.Logger;
+import rs.ac.bg.etf.pp1.ast.*;
+
+scan with{:
+	while(true){
+		Symbol s = this.getScanner().next_token();
+		//if (s != null && s.value != null)
+		//	System.out.printf("%s", s.value.toString());
+
+
+		if(s.sym != sym.NEWLINE && s.sym != sym.SPACE) 
+			return s;
+	}
+:}
+
+
+parser code {:
+	Logger log = Logger.getLogger(getClass());
+	public boolean detectedError = false;
+    
+    public void fatal(String message, Object info) throws java.lang.Exception {
+      done_parsing();
+      error("FATAL ERROR: " + message, info);
+    }
+  
+    public void error(String message, Object info) {
+    	detectedError = true;
+    	StringBuilder msg = new StringBuilder();
+    	if (info instanceof Symbol)
+            msg.append ("Syntax error on line: ").append(((Symbol)info).left).append(": ");
+		msg.append(message);
+        log.error(msg.toString());
+    }
+
+:}
+
+
+
+// ======================================== Terminals ======================================== //
+
+terminal PROGRAM, MAIN, ENUM, CONST, NEW, PRINT, READ, RETURN, VOID, LENGTH, AT;
+terminal LPAREN, RPAREN, LBRACE, RBRACE, LBRACKET, RBRACKET, COMMA, DOT, SEMICOLON, COLON, QUESTIONMARK, ASSIGN;
+terminal String RELOP, ADDOP, MULOP, INCDEC;
+
+terminal String IDENTIFIER;
+terminal Character CHAR_CONST;
+terminal Integer NUM_CONST, BOOL_CONST;
+
+terminal ERROR, NEWLINE, SPACE;
+
+
+// ======================================== Nonterminals ======================================== //
+
+nonterminal Program, ProgramName, TopLevelDeclList, TopLevelDecl, ConstDecl, ConstDeclSingleList;
+nonterminal ConstDeclSingle, VarDecl, VarDeclSingleList, VarDeclSingle;
+nonterminal EnumDecl, EnumName, EnumDeclSingleList, EnumDeclSingle, Type, MainMethod;
+nonterminal VarDeclList, StatementList, Statement, DesignatorStatement;
+
+nonterminal rs.etf.pp1.symboltable.concepts.Struct ConstValue, Expr, Addition, Multiplication, Factor, Term, BoolCondition, Condition, ThenExpr, ElseExpr;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj Designator, FunctionCall, LengthAccess, MainName, ArrayName;
+  
+// ======================================== Grammar ======================================== //
+
+
+Program ::= 
+	(Program) PROGRAM ProgramName TopLevelDeclList LBRACE MainMethod RBRACE
+	;
+
+ProgramName ::= 
+	(ProgramName) IDENTIFIER:name
+	;
+
+TopLevelDeclList ::=
+	(ListTopLevelDeclList) TopLevelDeclList TopLevelDecl
+	| (EmptyTopLevelDeclList) 	/* empty */
+	;
+
+TopLevelDecl ::= 
+	(TopLevelConstDecl) ConstDecl 	
+	| (TopLevelVarDecl) VarDecl
+	| (TopLevelEnumDecl) EnumDecl
+	;
+
+
+ConstDecl ::= 
+	(ConstDecl) CONST Type ConstDeclSingleList SEMICOLON
+	;
+
+ConstDeclSingleList ::=
+	(ConstDeclList) ConstDeclSingleList COMMA ConstDeclSingle 
+	| (ConstDeclListSingle) ConstDeclSingle
+	;
+
+ConstDeclSingle ::=
+	(ConstDeclSingle) IDENTIFIER:name ASSIGN ConstValue
+	;
+
+ConstValue ::=
+	(NumValue) NUM_CONST:val 
+	| (CharValue) CHAR_CONST:val 
+	| (BoolValue) BOOL_CONST:val
+	;
+
+VarDecl ::=
+	(RealVarDecl) Type VarDeclSingleList SEMICOLON
+	| (ErrorSemicolon) Type error:s {: parser.error("Error in variable declaration. Line: " + sleft, null); :} SEMICOLON
+	;
+
+VarDeclSingleList ::=
+	(ListVarDeclSingleList) VarDeclSingleList COMMA VarDeclSingle
+	| (VarDeclSingleListSingle) VarDeclSingle
+	;
+
+VarDeclSingle ::=
+	(VarDeclSingleIdent) IDENTIFIER:name
+	| (VarDeclSingleArr) IDENTIFIER:name LBRACKET RBRACKET
+	;
+
+
+EnumDecl ::=
+	(EnumDecl) ENUM EnumName LBRACE EnumDeclSingleList RBRACE
+	;
+
+EnumName ::= 
+	(EnumName) IDENTIFIER:name
+	;
+
+EnumDeclSingleList ::= 
+	(ListEnumDeclSingleList) EnumDeclSingleList COMMA EnumDeclSingle
+	| (EnumDeclSingleListSingle) EnumDeclSingle
+	;
+
+EnumDeclSingle ::=
+	(EnumDeclSingleIdent) IDENTIFIER:name
+	| (EnumDeclSingleAssign) IDENTIFIER:name ASSIGN NUM_CONST:numValue
+	;
+
+
+Type ::= 
+	(Type) IDENTIFIER:typeName
+	;
+
+
+MainMethod ::=
+	(MainMethod) VOID MainName LPAREN RPAREN VarDeclList LBRACE StatementList RBRACE
+	;
+
+MainName ::= 
+	(MainName) MAIN
+	;
+
+
+VarDeclList ::=
+	(ListVarDeclList) VarDeclList VarDecl
+	| (VarDeclListEmpty)	/* empty */
+	;
+
+
+StatementList ::=
+	(ListStatementList) StatementList Statement
+	| (StatementListEmpty) 	/* empty */
+	;
+
+
+Statement ::=
+	(DesignatorStmt) DesignatorStatement SEMICOLON
+	| (ReadStmt) READ LPAREN Designator RPAREN SEMICOLON
+	| (PrintExprStmt) PRINT LPAREN Expr RPAREN SEMICOLON
+	| (PrintExprConstStmt) PRINT LPAREN Expr COMMA NUM_CONST:numConst RPAREN SEMICOLON
+	| error:s {:  parser.error("Error in statement. Line: " + sleft, null); :} SEMICOLON
+	;
+
+ 
+DesignatorStatement ::=
+	(Assignment) Designator ASSIGN Expr
+	| (Incdec) Designator INCDEC:op
+	;
+
+Expr ::=
+	(ExprToAdd) BoolCondition
+	| (Ternary) Condition QUESTIONMARK ThenExpr COLON ElseExpr
+	;
+
+Condition ::= 
+	(Condition) BoolCondition
+	;
+
+ThenExpr ::=
+	(ThenExpr) Expr
+	;
+
+ElseExpr ::=
+	(ElseExpr) Expr
+	;
+
+BoolCondition ::= 
+	(SimpleCondition) Addition
+	| (ComparisonCondition) BoolCondition RELOP:op Addition
+	;
+
+Addition ::=
+	(Add) Addition ADDOP:op Multiplication
+	| (AddToMultiplication) Multiplication
+	;
+
+Multiplication ::=
+	(Multiply) Multiplication MULOP:op Factor
+	| (MultiplyToFactor) Factor
+	;
+
+Factor ::=
+	(Negation) ADDOP:op Term
+	| (FactorToTerm) Term
+	;
+
+Term ::=
+	(TermInParnetheses) LPAREN Expr RPAREN
+	| (TermToDesignator) Designator
+	| (TermFunctionCall) FunctionCall
+	| (TermNewTypeArray) NEW Type LBRACKET Expr RBRACKET
+	| (TermLengthAccess) LengthAccess
+	| (TermConstInt) NUM_CONST:val
+	| (TermConstChar) CHAR_CONST:val
+	| (TermConstBool) BOOL_CONST:val
+	;
+
+FunctionCall ::= 
+	(FunctionCall) IDENTIFIER:name LPAREN Expr RPAREN
+	;
+
+LengthAccess ::=
+	(LengthAccess) IDENTIFIER:name DOT LENGTH
+	;
+
+Designator ::=
+	(Ident) IDENTIFIER:name
+	| (ArrayIndexing) ArrayName LBRACKET Expr RBRACKET
+	| (FieldAccess) IDENTIFIER:name DOT IDENTIFIER:field
+	;
+
+ArrayName ::= 
+	(ArrayName) IDENTIFIER:name
+	;

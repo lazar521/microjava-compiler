@@ -1,0 +1,153 @@
+<project name="MJCompiler" default="all" basedir=".">
+
+    <!-- Run everything -->
+    <target name="all" >
+        <generate/>
+        <compile/>
+        <run/>
+        <runObj/>
+	</target>
+
+
+    <!-- Generate the files needed -->
+    <target name="prepare" >
+        <generate/>
+	</target>
+
+    <!-- Compile and run the program -->
+    <target name="compile" >
+        <compile/>
+    </target>
+
+
+    <!-- Test the program -->
+    <target name="execute" >
+        <run/>
+        <runObj/>
+    </target>
+
+    <target name="debug">
+        <run/>
+        <disasm/>
+        <debugObj/>
+    </target>
+
+
+
+    <macrodef name="generate">
+        <sequential>
+            <echo message="====================================================== Clean ======================================================"/>
+            <delete>
+                <fileset dir="target"/>
+                <fileset dir="src/rs/ac/bg/etf/pp1/ast"/>
+            </delete>
+            <delete file="src/rs/ac/bg/etf/pp1/Lexer.java"/>
+            <delete file="src/rs/ac/bg/etf/pp1/Parser.java"/>
+            <delete file="src/rs/ac/bg/etf/pp1/sym.java"/>
+
+            <echo/> 
+            <echo message="====================================================== Lexer ======================================================"/>
+            <java jar="lib/JFlex.jar" fork="true" failonerror="true">
+                <arg value="-d"/>
+                <arg value="src/rs/ac/bg/etf/pp1"/>
+                <arg value="spec/mjlexer.flex"/>
+            </java>
+
+            <echo/> 
+            <echo message="====================================================== Parser ======================================================"/>
+            <java jar="lib/cup_v10k.jar" fork="true" failonerror="true">
+                <redirector output="logs/cup.log" append="false" alwayslog="true"/>
+                <arg value="-destdir"/>
+                <arg value="src/rs/ac/bg/etf/pp1"/>
+                <arg value="-ast"/>
+                <arg value="src.rs.ac.bg.etf.pp1.ast"/>
+                <arg value="-parser"/>
+                <arg value="Parser"/>
+                <arg value="-package"/>
+                <arg value="rs.ac.bg.etf.pp1"/>
+                <arg value="-symbols"/>
+                <arg value="sym"/>
+                <arg value="-buildtree"/>
+                <!-- <arg value="-dump_states"/>             -->
+                <arg value="spec/mjparser.cup"/>
+            </java>
+
+            <!-- Replaces all of the references to the old package name in files in the "src" directory -->
+            <replace dir="src/rs/ac/bg/etf/pp1/ast" value="rs.ac.bg.etf.pp1.ast" token="src.rs.ac.bg.etf.pp1.ast" summary="true"/>
+
+        </sequential>
+    </macrodef>
+
+
+    <macrodef name="compile">
+        <sequential>
+            <echo/> 
+            <echo message="====================================================== Compile ======================================================"/>
+            <javac srcdir="src/rs/ac/bg/etf/pp1" destdir="target" includeantruntime="false" failonerror="true">
+                <classpath>
+                    <pathelement path="lib/JFlex.jar"/>
+                    <pathelement path="lib/cup_v10k.jar"/>
+                    <pathelement path="lib/log4j-1.2.17.jar"/>
+                    <pathelement path="lib/symboltable-1-1.jar"/>
+                    <pathelement path="lib/mj-runtime-1.1.jar"/>
+                </classpath>
+            </javac>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="run">
+        <sequential>
+            <echo/>
+            <echo message="====================================================== Run ======================================================"/>
+            <java classname="rs.ac.bg.etf.pp1.Compiler" fork="true" failonerror="true">
+                <arg value="test/program.mj"/>
+                <arg value="test/program.obj"/>
+                <jvmarg value="-Xmx768m"/>
+                <classpath>
+                    <pathelement path="target"/>
+                    <pathelement path="lib/JFlex.jar"/>
+                    <pathelement path="lib/cup_v10k.jar"/>
+                    <pathelement path="lib/log4j-1.2.17.jar"/>
+                    <pathelement path="lib/symboltable-1-1.jar"/>
+                    <pathelement path="lib/mj-runtime-1.1.jar"/>
+                </classpath>
+            </java>
+        </sequential>
+    </macrodef>
+
+
+    <macrodef name="disasm">
+        <sequential>
+            <java classname="rs.etf.pp1.mj.runtime.disasm">
+                <arg value="test/program.obj"/>
+                <classpath>
+                    <pathelement location="lib/mj-runtime-1.1.jar"/>
+                </classpath>
+            </java>
+        </sequential>
+    </macrodef>
+
+
+    <macrodef name="runObj">
+        <sequential>
+            <java classname="rs.etf.pp1.mj.runtime.Run">
+                <arg value="test/program.obj"/>
+                <classpath>
+                    <pathelement location="lib/mj-runtime-1.1.jar"/>
+                </classpath>
+            </java>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="debugObj">
+        <sequential>
+            <java classname="rs.etf.pp1.mj.runtime.Run">
+                <arg value="test/program.obj"/>
+                <arg value="-debug"/>                
+                <classpath>
+                    <pathelement location="lib/mj-runtime-1.1.jar"/>
+                </classpath>
+            </java>
+        </sequential>
+    </macrodef>
+</project>

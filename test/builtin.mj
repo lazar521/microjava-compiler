@@ -1,0 +1,17 @@
+program TestChrOrd
+
+{
+	void main()
+		char c;
+		int x;
+	{
+		c = chr(65);
+		print(c); print(' ');   // A
+
+		x = ord('A');
+		print(x); print(' ');   // 65
+
+		print(chr(ord('B')));   // B
+		print(eol);
+	}
+}

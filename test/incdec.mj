@@ -1,0 +1,25 @@
+program TestIncDec
+
+int arr[];
+
+{
+	void main()
+		int a;
+	{
+		arr = new int[3];
+		arr[0] = 10;
+
+		a = 5;
+		a++;
+		print(a); print(' ');   // 6
+
+		a--;
+		print(a); print(' ');   // 5
+
+		arr[0]++;
+		print(arr[0]); print(' ');   // 11
+
+		arr[0]--;
+		print(arr[0]); print(eol);   // 10
+	}
+}

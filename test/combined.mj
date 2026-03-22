@@ -1,0 +1,23 @@
+program TestCombo
+
+int arr[];
+
+{
+	void main()
+		int x;
+	{
+		arr = new int[3];
+
+		arr[1] = 10;
+		arr[1]++;
+		print(arr[1]); print(' ');   // 11
+
+		x = (5 > 3) ? 100 : 200;
+		print(x); print(' ');        // 100
+
+		print(len(arr)); print(' '); // 3
+
+		print(chr(ord('Z')));        // Z
+		print(eol);
+	}
+}

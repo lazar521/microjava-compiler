@@ -1,0 +1,22 @@
+program TestRecovery
+
+
+int a
+int b;
+int c, ;
+int d;
+int a, 123bad, b, , c[], d;
+
+{
+	void main()
+	{
+		a = ;                 // error: missing expression
+
+		b = 3 + ;             // error: incomplete expression
+
+		arr = new int[5];
+		arr[2] = ;            // error: missing expression
+
+
+	}
+}

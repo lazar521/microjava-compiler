@@ -1,0 +1,25 @@
+program TestRelations
+
+{
+	void main()
+		bool b;
+	{
+		b = (5 > 3);
+		print(b); print(' ');   // 1
+
+		b = (5 < 3);
+		print(b); print(' ');   // 0
+
+		b = (10 >= 10);
+		print(b); print(' ');   // 1
+
+		b = (7 <= 6);
+		print(b); print(' ');   // 0
+
+		b = (5 == 5);
+		print(b); print(' ');   // 1
+
+		b = (5 != 5);
+		print(b); print(eol);   // 0
+	}
+}
